@@ -1,6 +1,5 @@
-
 # Import Libraries
-import random
+# import random
 import pygame
 import sys
 
@@ -20,14 +19,18 @@ GREY = (120, 120, 120)
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(f"Chess Board({WIDTH},{HEIGHT})")
 
+
 # Main Draw Function
-def draw_board(window):
+def draw_board(win):
     colors = [WHITE, BLACK]
-    pygame.draw.rect(window, GREY, (0, 0, WIDTH, HEIGHT))
+    pygame.draw.rect(win, GREY, (0, 0, WIDTH, HEIGHT))
+
     for row in range(8):
         for col in range(8):
             color = colors[(row + col) % 2]
-            pygame.draw.rect(window, color, (BORDER + (col * SQUARE_SIZE), BORDER + (row * SQUARE_SIZE), SQUARE_SIZE, SQUARE_SIZE))
+            pygame.draw.rect(win, color,
+                             (BORDER + (col * SQUARE_SIZE), BORDER + (row * SQUARE_SIZE), SQUARE_SIZE, SQUARE_SIZE))
+
 
 # Main Loop
 def main():
@@ -41,6 +44,6 @@ def main():
     pygame.quit()
     sys.exit()
 
+
 if __name__ == "__main__":
     main()
-
