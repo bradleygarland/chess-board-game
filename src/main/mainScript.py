@@ -49,7 +49,7 @@ def draw_pieces(win, board):
                 win.blit(text_surface, text_rect)
 
 
-# Create Inital Board
+# Create Initial Board
 def create_initial_board():
     board = [
         ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
@@ -64,14 +64,55 @@ def create_initial_board():
     return board
 
 
+# Get Mouse Square Position
+def get_square_under_mouse():
+    mouse_pos = pygame.mouse.get_pos()
+    return mouse_pos[1] // SQUARE_SIZE, mouse_pos[0] // SQUARE_SIZE
+
+
+# Check for Legal Move
+def is_valid_move(piece, start_pos, end_pos, board):
+    start_row, start_col = start_pos
+    end_row, end_col = end_pos
+    move_piece = piece[1]
+    piece_color = piece[0]
+
+    if move_piece == 'p':   # Pawn Logic
+        if piece_color == 'w':
+            # Initial Two-Step Move
+            if start_row == 6 and end_row == 4 and start_col == end_col and board[5][start_col] == '--' and board[4][start_col] == '--':
+                return True
+            # One-Step Move
+            if end_row == start_row - 1 and start_col == end_col and board[end_row][end_col] == '--':
+                return True
+            # Capture Move
+            if end_row == start_row - 1 and abs(end_col - start_col) == 1 and board[end_row][end_col] != '--' and board[end_row][end_col][0] == 'b':
+                return True
+    return False  # Return False if invalid move
+
+
 # Main Loop
 def main():
     board = create_initial_board()
+    selected_piece = None
+    selected_pos = None
     run = True
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                row, col = get_square_under_mouse()
+                if selected_piece:
+                    if is_valid_move(selected_piece, selected_pos, (row, col), board):
+                        board[row][col] = selected_piece
+                        board[selected_pos[0]][selected_pos[1]] = '--'
+                    selected_piece = None
+                else:
+                    if board[row][col] != '--':
+                        selected_piece = board[row][col]
+                        selected_pos = (row, col)
+                        board[row][col] = '--'
 
         draw_board(window)
         draw_pieces(window, board)
