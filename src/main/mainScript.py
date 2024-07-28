@@ -10,6 +10,9 @@ print(f"Pygame initialized with {successes} successes and {failures} failures.")
 # Constants
 WIDTH, HEIGHT = 800, 800
 SQUARE_SIZE = WIDTH // 8
+PANEL_WIDTH = 300
+MENU_HEIGHT = 300
+MENU_MARGIN = 20
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 FONT_SIZE = 50
@@ -18,13 +21,26 @@ BORDER_SIZE = 5
 GREEN = (118, 150, 86)
 CREAM = (238, 238, 210)
 
+# Move History Constants
+MOVE_SECTION_HEIGHT = HEIGHT - MENU_HEIGHT
+MOVE_SECTION_WIDTH = PANEL_WIDTH
+MOVE_SECTION_COLOR = (70, 70, 70)
+
+# Button Constants
+BUTTON_WIDTH, BUTTON_HEIGHT = 200, 50
+BUTTON_X = WIDTH + (abs(PANEL_WIDTH - BUTTON_WIDTH) // 2)
+BUTTON_Y = (MENU_HEIGHT - MENU_MARGIN) // 2 - (BUTTON_HEIGHT // 2)
+BUTTON_COLOR = WHITE
+BUTTON_TEXT_COLOR = BLACK
+
 # Set up Font
 font = pygame.font.SysFont(None, FONT_SIZE)
 border_font = pygame.font.SysFont(None, FONT_SIZE + BORDER_SIZE)
+button_font = pygame.font.SysFont(None, 36)
 
 # Display
-window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(f"Chess Board({WIDTH},{HEIGHT})")
+window = pygame.display.set_mode((WIDTH + PANEL_WIDTH, HEIGHT))
+pygame.display.set_caption(f"Chess Board({WIDTH + PANEL_WIDTH},{HEIGHT})")
 
 
 # Draw Board Function
@@ -241,6 +257,18 @@ def check_winner(board):
     return None
 
 
+# Draw Reset Button
+def draw_reset_button(win):
+    pygame.draw.rect(win, BUTTON_COLOR, (BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT))
+    text_surface = button_font.render("Reset", True, BUTTON_TEXT_COLOR)
+    text_rect = text_surface.get_rect(center=(BUTTON_X + BUTTON_WIDTH // 2, BUTTON_Y + BUTTON_HEIGHT // 2))
+    win.blit(text_surface, text_rect)
+
+
+# Draw Move History Section
+def draw_move_history_section(win):
+    pygame.draw.rect(win, MOVE_SECTION_COLOR, (WIDTH, MENU_HEIGHT, MOVE_SECTION_WIDTH, MOVE_SECTION_HEIGHT))
+
 # Main Loop
 def main():
     board = create_initial_board()
@@ -254,24 +282,30 @@ def main():
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 row, col = get_square_under_mouse()
-                if selected_piece:
-                    if selected_piece[0] == turn and is_valid_move(selected_piece, selected_pos, (row, col), board):
-                        board[row][col] = selected_piece
-                        board[selected_pos[0]][selected_pos[1]] = '--'
-                        turn = 'b' if turn == 'w' else 'w'  # Switch turn
-                        winner = check_winner(board)
-                        if winner:
-                            print(f"{winner} wins!")
-                            run = False
-                    else:  # Return Piece if Invalid Move
-                        board[selected_pos[0]][selected_pos[1]] = selected_piece
+                if BUTTON_X <= pygame.mouse.get_pos()[0] <= BUTTON_X + BUTTON_WIDTH and BUTTON_Y <= pygame.mouse.get_pos()[1] <= BUTTON_Y + BUTTON_HEIGHT:
+                    board = create_initial_board()
                     selected_piece = None
                     selected_pos = None
-                else:
-                    if board[row][col] != '--':
-                        selected_piece = board[row][col]
-                        selected_pos = (row, col)
-                        board[row][col] = '--'
+                    turn = 'w'
+                elif turn == 'w':
+                    if selected_piece:
+                        if selected_piece[0] == turn and is_valid_move(selected_piece, selected_pos, (row, col), board):
+                            board[row][col] = selected_piece
+                            board[selected_pos[0]][selected_pos[1]] = '--'
+                            turn = 'b' if turn == 'w' else 'w'  # Switch turn
+                            winner = check_winner(board)
+                            if winner:
+                                print(f"{winner} wins!")
+                                run = False
+                        else:  # Return Piece if Invalid Move
+                            board[selected_pos[0]][selected_pos[1]] = selected_piece
+                        selected_piece = None
+                        selected_pos = None
+                    else:
+                        if board[row][col] != '--':
+                            selected_piece = board[row][col]
+                            selected_pos = (row, col)
+                            board[row][col] = '--'
         if turn == 'b':
             make_random_move(turn, board)
             turn = 'w'
@@ -282,6 +316,8 @@ def main():
 
         draw_board(window)
         draw_pieces(window, board)
+        draw_reset_button(window)
+        draw_move_history_section(window)
         pygame.display.update()
 
     pygame.quit()
