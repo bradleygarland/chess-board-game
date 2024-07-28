@@ -13,12 +13,14 @@ SQUARE_SIZE = WIDTH // 8
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 FONT_SIZE = 50
+BORDER_SIZE = 5
 # Green/Cream Color Scheme
 GREEN = (118, 150, 86)
 CREAM = (238, 238, 210)
 
 # Set up Font
 font = pygame.font.SysFont(None, FONT_SIZE)
+border_font = pygame.font.SysFont(None, FONT_SIZE + BORDER_SIZE)
 
 # Display
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -43,7 +45,16 @@ def draw_pieces(win, board):
             piece = board[row][col]
             if piece != '--':
                 piece_color = WHITE if piece[0] == 'w' else BLACK
-                text_surface = font.render(piece[1], True, piece_color)
+                piece_letter = piece[1]
+
+                # Draw the Border
+                text_surface_border = border_font.render(piece_letter, True, BLACK)
+                text_rect_border = text_surface_border.get_rect(
+                    center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
+                win.blit(text_surface_border, text_rect_border)
+
+                # Draw the Piece Letter
+                text_surface = font.render(piece_letter, True, piece_color)
                 text_rect = text_surface.get_rect(
                     center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
                 win.blit(text_surface, text_rect)
@@ -198,7 +209,10 @@ def main():
                     if is_valid_move(selected_piece, selected_pos, (row, col), board):
                         board[row][col] = selected_piece
                         board[selected_pos[0]][selected_pos[1]] = '--'
+                    else:  # Return Piece if Invalid Move
+                        board[selected_pos[0]][selected_pos[1]] = selected_piece
                     selected_piece = None
+                    selected_pos = None
                 else:
                     if board[row][col] != '--':
                         selected_piece = board[row][col]
