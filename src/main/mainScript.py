@@ -1,5 +1,5 @@
 # Import Libraries
-# import random
+import random
 import pygame
 import sys
 
@@ -193,11 +193,60 @@ def is_valid_move(piece, start_pos, end_pos, board):
     return False  # Return False if invalid move
 
 
+# Find all valid moves
+def get_all_valid_moves(turn, board):
+    moves = []
+    pieces = []
+    for row in range(8):
+        for col in range(8):
+            if board[row][col][0] == turn:
+                pieces.append([board[row][col], [row, col]])
+    piece = random.choice(pieces)
+    for r in range(8):
+        for c in range(8):
+            if is_valid_move(piece[0], (piece[1][0], piece[1][1]), (r, c), board):
+                moves.append(((piece[1][0], piece[1][1]), (r, c)))
+    return moves
+
+
+# NPC Decision Process
+def make_random_move(turn, board):
+    valid_moves_available = False
+    valid_moves = None
+    while not valid_moves_available:
+        valid_moves = get_all_valid_moves(turn, board)
+        if valid_moves:
+            valid_moves_available = True
+    move = random.choice(valid_moves)
+    start_pos, end_pos = move
+    piece = board[start_pos[0]][start_pos[1]]
+    board[end_pos[0]][end_pos[1]] = piece
+    board[start_pos[0]][start_pos[1]] = '--'
+
+
+# Check for Winner
+def check_winner(board):
+    white_king = False
+    black_king = False
+    for row in board:
+        for piece in row:
+            if piece == 'wk':
+                white_king = True
+            if piece == 'bk':
+                black_king = True
+    if not  white_king:
+        return "Black"
+    if not black_king:
+        return "White"
+    return None
+
+
 # Main Loop
 def main():
     board = create_initial_board()
     selected_piece = None
     selected_pos = None
+    turn = 'w'
     run = True
     while run:
         for event in pygame.event.get():
@@ -206,9 +255,14 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 row, col = get_square_under_mouse()
                 if selected_piece:
-                    if is_valid_move(selected_piece, selected_pos, (row, col), board):
+                    if selected_piece[0] == turn and is_valid_move(selected_piece, selected_pos, (row, col), board):
                         board[row][col] = selected_piece
                         board[selected_pos[0]][selected_pos[1]] = '--'
+                        turn = 'b' if turn == 'w' else 'w'  # Switch turn
+                        winner = check_winner(board)
+                        if winner:
+                            print(f"{winner} wins!")
+                            run = False
                     else:  # Return Piece if Invalid Move
                         board[selected_pos[0]][selected_pos[1]] = selected_piece
                     selected_piece = None
@@ -218,6 +272,13 @@ def main():
                         selected_piece = board[row][col]
                         selected_pos = (row, col)
                         board[row][col] = '--'
+        if turn == 'b':
+            make_random_move(turn, board)
+            turn = 'w'
+            winner = check_winner(board)
+            if winner:
+                print(f"{winner} wins!")
+                run = False
 
         draw_board(window)
         draw_pieces(window, board)
