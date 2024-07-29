@@ -14,17 +14,43 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 FONT_SIZE = 50
 BORDER_SIZE = 5
+
 # Green/Cream Color Scheme
 GREEN = (118, 150, 86)
 CREAM = (238, 238, 210)
 
+PANEL_WIDTH = 300
+
+# Menu Constants
+MENU_HEIGHT = 300
+MENU_MARGIN = 20
+
+# Move History Constants
+MOVE_SECTION_HEIGHT = HEIGHT - MENU_HEIGHT
+MOVE_SECTION_WIDTH = PANEL_WIDTH
+MOVE_SECTION_COLOR = (70, 70, 70)
+
+
+# Global Move History
+move_history = []
+
+# Button Constants
+BUTTONS = ["Reset", "Flip", "Player/CPU"]
+BUTTON_WIDTH, BUTTON_HEIGHT = 200, 50
+BUTTON_X = WIDTH + (abs(PANEL_WIDTH - BUTTON_WIDTH) // 2)
+BUTTON_Y = (MENU_HEIGHT - 30 - BUTTON_HEIGHT * len(BUTTONS)) // 2
+BUTTON_COLOR = WHITE
+BUTTON_TEXT_COLOR = BLACK
+
 # Set up Font
 font = pygame.font.SysFont(None, FONT_SIZE)
 border_font = pygame.font.SysFont(None, FONT_SIZE + BORDER_SIZE)
+button_font = pygame.font.SysFont(None, 36)
+history_font = pygame.font.SysFont(None, 24)
 
 # Display
-window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(f"Chess Board({WIDTH},{HEIGHT})")
+window = pygame.display.set_mode((WIDTH + PANEL_WIDTH, HEIGHT))
+pygame.display.set_caption(f"Chess Board({WIDTH + PANEL_WIDTH},{HEIGHT})")
 
 
 # Draw Board Function
@@ -78,7 +104,8 @@ def create_initial_board():
 # Get Mouse Square Position
 def get_square_under_mouse():
     mouse_pos = pygame.mouse.get_pos()
-    return mouse_pos[1] // SQUARE_SIZE, mouse_pos[0] // SQUARE_SIZE
+    if mouse_pos[0] <= WIDTH:
+        return mouse_pos[1] // SQUARE_SIZE, mouse_pos[0] // SQUARE_SIZE
 
 
 # Check for Legal Move
@@ -109,6 +136,7 @@ def is_valid_move(piece, start_pos, end_pos, board):
             # Capture Move
             if end_row == start_row + 1 and abs(end_col - start_col) == 1 and board[end_row][end_col] != '--' and board[end_row][end_col][0] == 'w':
                 return True
+            # Capture En Passant Move
 
     if move_piece == 'r':  # Rook Logic
         # Horizontal or Vertical Move
@@ -222,6 +250,7 @@ def make_random_move(turn, board):
     piece = board[start_pos[0]][start_pos[1]]
     board[end_pos[0]][end_pos[1]] = piece
     board[start_pos[0]][start_pos[1]] = '--'
+    move_history.append((start_pos, end_pos))
 
 
 # Check for Winner
@@ -234,11 +263,61 @@ def check_winner(board):
                 white_king = True
             if piece == 'bk':
                 black_king = True
-    if not  white_king:
+    if not white_king:
         return "Black"
     if not black_king:
         return "White"
     return None
+
+
+# Draw Reset Button
+def draw_reset_button(win):
+    button_index = BUTTONS.index("Reset")
+    pygame.draw.rect(win, BUTTON_COLOR, (BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT))
+    text_surface = button_font.render(BUTTONS[button_index], True, BUTTON_TEXT_COLOR)
+    text_rect = text_surface.get_rect(center=(BUTTON_X + BUTTON_WIDTH // 2, BUTTON_Y + BUTTON_HEIGHT // 2))
+    win.blit(text_surface, text_rect)
+
+
+# Draw Flip Button
+def draw_flip_button(win):
+    button_index = BUTTONS.index("Flip")
+    pygame.draw.rect(win, BUTTON_COLOR, (BUTTON_X, BUTTON_Y + BUTTON_HEIGHT + 15, BUTTON_WIDTH, BUTTON_HEIGHT))
+    text_surface = button_font.render(BUTTONS[button_index], True, BUTTON_TEXT_COLOR)
+    text_rect = text_surface.get_rect(center=(BUTTON_X + BUTTON_WIDTH // 2, (BUTTON_Y + BUTTON_HEIGHT + 15) + BUTTON_HEIGHT // 2))
+    win.blit(text_surface, text_rect)
+
+
+# Draw Mode Button
+def draw_mode_button(win):
+    button_index = BUTTONS.index("Player/CPU")
+    pygame.draw.rect(win, BUTTON_COLOR, (BUTTON_X, BUTTON_Y + BUTTON_HEIGHT * 2 + 30, BUTTON_WIDTH, BUTTON_HEIGHT))
+    text_surface = button_font.render(BUTTONS[button_index], True, BUTTON_TEXT_COLOR)
+    text_rect = text_surface.get_rect(center=(BUTTON_X + BUTTON_WIDTH // 2, BUTTON_Y + (BUTTON_HEIGHT + 15) * 2 + BUTTON_HEIGHT // 2))
+    win.blit(text_surface, text_rect)
+
+
+# Draw Move History Section
+def draw_move_history_section(win):
+    pygame.draw.rect(win, MOVE_SECTION_COLOR, (WIDTH, MENU_HEIGHT, MOVE_SECTION_WIDTH, MOVE_SECTION_HEIGHT))
+
+
+# Draw Move History
+def draw_move_history(win):
+    start_y = MENU_HEIGHT
+    padding = 10
+    j = 0
+    if len(move_history) <= 25:
+        for i, (start, end) in enumerate(move_history):
+            move_text = f"{i + 1}. ({start[0]}, {start[1]}) -> ({end[0]}, {end[1]})"
+            text_surface = history_font.render(move_text, True, BLACK)
+            win.blit(text_surface, (WIDTH + padding, start_y + i * 20))
+    else:
+        for i in range(len(move_history) - 25, len(move_history)):
+            move_text = f"{i + 1}. ({move_history[i][0][0]}, {move_history[i][0][1]}) -> ({move_history[i][1][0]}, {move_history[i][1][1]})"
+            text_surface = history_font.render(move_text, True, BLACK)
+            win.blit(text_surface, (WIDTH + padding, start_y + j * 20))
+            j += 1
 
 
 # Main Loop
@@ -246,6 +325,7 @@ def main():
     board = create_initial_board()
     selected_piece = None
     selected_pos = None
+    global move_history
     turn = 'w'
     run = True
     while run:
@@ -253,25 +333,36 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                row, col = get_square_under_mouse()
-                if selected_piece:
-                    if selected_piece[0] == turn and is_valid_move(selected_piece, selected_pos, (row, col), board):
-                        board[row][col] = selected_piece
-                        board[selected_pos[0]][selected_pos[1]] = '--'
-                        turn = 'b' if turn == 'w' else 'w'  # Switch turn
-                        winner = check_winner(board)
-                        if winner:
-                            print(f"{winner} wins!")
-                            run = False
-                    else:  # Return Piece if Invalid Move
-                        board[selected_pos[0]][selected_pos[1]] = selected_piece
+                row, col = None, None
+                if pygame.mouse.get_pos()[0] <= WIDTH:
+                    row, col = get_square_under_mouse()
+                if BUTTON_X <= pygame.mouse.get_pos()[0] <= BUTTON_X + BUTTON_WIDTH and BUTTON_Y <= pygame.mouse.get_pos()[1] <= BUTTON_Y + BUTTON_HEIGHT:
+                    board = create_initial_board()
                     selected_piece = None
                     selected_pos = None
-                else:
-                    if board[row][col] != '--':
-                        selected_piece = board[row][col]
-                        selected_pos = (row, col)
-                        board[row][col] = '--'
+                    turn = 'w'
+                    move_history = []
+                elif turn == 'w':
+                    if selected_piece:
+                        if selected_piece[0] == turn and is_valid_move(selected_piece, selected_pos, (row, col), board):
+                            board[row][col] = selected_piece
+                            board[selected_pos[0]][selected_pos[1]] = '--'
+                            move_history.append((selected_pos, (row, col)))
+                            turn = 'b' if turn == 'w' else 'w'  # Switch turn
+                            winner = check_winner(board)
+                            if winner:
+                                print(f"{winner} wins!")
+                                run = False
+                        else:  # Return Piece if Invalid Move
+                            board[selected_pos[0]][selected_pos[1]] = selected_piece
+                        selected_piece = None
+                        selected_pos = None
+                    else:
+                        if row or col:
+                            if board[row][col] != '--':
+                                selected_piece = board[row][col]
+                                selected_pos = (row, col)
+                                board[row][col] = '--'
         if turn == 'b':
             make_random_move(turn, board)
             turn = 'w'
@@ -282,6 +373,11 @@ def main():
 
         draw_board(window)
         draw_pieces(window, board)
+        draw_reset_button(window)
+        draw_flip_button(window)
+        draw_mode_button(window)
+        draw_move_history_section(window)
+        draw_move_history(window)
         pygame.display.update()
 
     pygame.quit()
