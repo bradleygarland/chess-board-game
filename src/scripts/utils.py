@@ -1,78 +1,11 @@
-# Import Libraries
-# import random
 import pygame
-import sys
-
-# Initialize Pygame
-successes, failures = pygame.init()
-print(f"Pygame initialized with {successes} successes and {failures} failures.")
+import random
 
 # Constants
-WIDTH, HEIGHT = 800, 800
-SQUARE_SIZE = WIDTH // 8
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-FONT_SIZE = 50
-BORDER_SIZE = 5
-# Green/Cream Color Scheme
-GREEN = (118, 150, 86)
-CREAM = (238, 238, 210)
+SQUARE_SIZE = 100
 
-# Set up Font
-font = pygame.font.SysFont(None, FONT_SIZE)
-border_font = pygame.font.SysFont(None, FONT_SIZE + BORDER_SIZE)
-
-# Display
-window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption(f"Chess Board({WIDTH},{HEIGHT})")
-
-
-# Draw Board Function
-def draw_board(win):
-    colors = [GREEN, CREAM]
-
-    for row in range(8):
-        for col in range(8):
-            color = colors[(row + col) % 2]
-            pygame.draw.rect(win, color,
-                             ((col * SQUARE_SIZE), (row * SQUARE_SIZE), SQUARE_SIZE, SQUARE_SIZE))
-
-
-# Draw Pieces Function
-def draw_pieces(win, board):
-    for row in range(8):
-        for col in range(8):
-            piece = board[row][col]
-            if piece != '--':
-                piece_color = WHITE if piece[0] == 'w' else BLACK
-                piece_letter = piece[1]
-
-                # Draw the Border
-                text_surface_border = border_font.render(piece_letter, True, BLACK)
-                text_rect_border = text_surface_border.get_rect(
-                    center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
-                win.blit(text_surface_border, text_rect_border)
-
-                # Draw the Piece Letter
-                text_surface = font.render(piece_letter, True, piece_color)
-                text_rect = text_surface.get_rect(
-                    center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
-                win.blit(text_surface, text_rect)
-
-
-# Create Initial Board
-def create_initial_board():
-    board = [
-        ['br', 'bn', 'bb', 'bq', 'bk', 'bb', 'bn', 'br'],
-        ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['--', '--', '--', '--', '--', '--', '--', '--'],
-        ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
-        ['wr', 'wn', 'wb', 'wq', 'wk', 'wb', 'wn', 'wr']
-    ]
-    return board
+# Global Move History
+move_history = []
 
 
 # Get Mouse Square Position
@@ -109,6 +42,7 @@ def is_valid_move(piece, start_pos, end_pos, board):
             # Capture Move
             if end_row == start_row + 1 and abs(end_col - start_col) == 1 and board[end_row][end_col] != '--' and board[end_row][end_col][0] == 'w':
                 return True
+            # Capture En Passant Move
 
     if move_piece == 'r':  # Rook Logic
         # Horizontal or Vertical Move
@@ -193,39 +127,50 @@ def is_valid_move(piece, start_pos, end_pos, board):
     return False  # Return False if invalid move
 
 
-# Main Loop
-def main():
-    board = create_initial_board()
-    selected_piece = None
-    selected_pos = None
-    run = True
-    while run:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                row, col = get_square_under_mouse()
-                if selected_piece:
-                    if is_valid_move(selected_piece, selected_pos, (row, col), board):
-                        board[row][col] = selected_piece
-                        board[selected_pos[0]][selected_pos[1]] = '--'
-                    else:  # Return Piece if Invalid Move
-                        board[selected_pos[0]][selected_pos[1]] = selected_piece
-                    selected_piece = None
-                    selected_pos = None
-                else:
-                    if board[row][col] != '--':
-                        selected_piece = board[row][col]
-                        selected_pos = (row, col)
-                        board[row][col] = '--'
-
-        draw_board(window)
-        draw_pieces(window, board)
-        pygame.display.update()
-
-    pygame.quit()
-    sys.exit()
+# Find all valid moves
+def get_all_valid_moves(turn, board):
+    moves = []
+    pieces = []
+    for row in range(8):
+        for col in range(8):
+            if board[row][col][0] == turn:
+                pieces.append([board[row][col], [row, col]])
+    piece = random.choice(pieces)
+    for r in range(8):
+        for c in range(8):
+            if is_valid_move(piece[0], (piece[1][0], piece[1][1]), (r, c), board):
+                moves.append(((piece[1][0], piece[1][1]), (r, c)))
+    return moves
 
 
-if __name__ == "__main__":
-    main()
+# NPC Decision Process
+def make_random_move(turn, board):
+    valid_moves_available = False
+    valid_moves = None
+    while not valid_moves_available:
+        valid_moves = get_all_valid_moves(turn, board)
+        if valid_moves:
+            valid_moves_available = True
+    move = random.choice(valid_moves)
+    start_pos, end_pos = move
+    piece = board[start_pos[0]][start_pos[1]]
+    board[end_pos[0]][end_pos[1]] = piece
+    board[start_pos[0]][start_pos[1]] = '--'
+    move_history.append((start_pos, end_pos))
+
+
+# Check for Winner
+def check_winner(board):
+    white_king = False
+    black_king = False
+    for row in board:
+        for piece in row:
+            if piece == 'wk':
+                white_king = True
+            if piece == 'bk':
+                black_king = True
+    if not white_king:
+        return "Black"
+    if not black_king:
+        return "White"
+    return None
