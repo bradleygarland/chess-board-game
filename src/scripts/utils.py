@@ -45,6 +45,9 @@ def is_valid_move(piece, start_pos, end_pos, board):
             # Capture En Passant Move
 
     if move_piece == 'r':  # Rook Logic
+        # Prevent Self Capture
+        if start_row == end_row and start_col == end_col:
+            return False
         # Horizontal or Vertical Move
         if start_row == end_row or start_col == end_col:
             if start_row == end_row:  # Horizontal Move
@@ -73,6 +76,9 @@ def is_valid_move(piece, start_pos, end_pos, board):
                 return True
 
     if move_piece == 'b':  # Bishop Logic
+        # Prevent Self Capture
+        if start_row == end_row and start_col == end_col:
+            return False
         if abs(start_row - end_row) == abs(start_col - end_col):  # Diagonal Movement
             step_row = 1 if start_row < end_row else -1
             step_col = 1 if start_col < end_col else -1
@@ -87,6 +93,9 @@ def is_valid_move(piece, start_pos, end_pos, board):
                     return True
 
     if move_piece == 'q':  # Queen Logic
+        # Prevent Self Capture
+        if start_row == end_row and start_col == end_col:
+            return False
         # Horizontal, Vertical, or Diagonal Movement
         if start_row == end_row or start_col == end_col or abs(start_row - end_row) == abs(start_col - end_col):
             # Horizontal Movement
@@ -117,12 +126,13 @@ def is_valid_move(piece, start_pos, end_pos, board):
 
     if move_piece == 'k':  # King Logic
         if abs(start_row - end_row) <= 1 and abs(start_col - end_col) <= 1:
-            if piece_color == 'w':  # White King
-                if board[end_row][end_col][0] != 'w':
-                    return True
-            else:  # Black King
-                if board[end_row][end_col][0] != 'b':
-                    return True
+            if start_row != end_row and start_col != end_col:
+                if piece_color == 'w':  # White King
+                    if board[end_row][end_col][0] != 'w':
+                        return True
+                else:  # Black King
+                    if board[end_row][end_col][0] != 'b':
+                        return True
 
     return False  # Return False if invalid move
 
