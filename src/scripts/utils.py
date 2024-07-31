@@ -235,14 +235,14 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
         else:
             # Queen Side
             if start_col - end_col < 0:
-                for col in range(start_col, 7):
+                for col in range(start_col, 8):
                     board[start_row][col] = '--'
                 board[start_row][start_col + 2] = 'bk'
                 board[start_row][start_col + 1] = 'br'
 
             # King Side
             else:
-                for col in range(start_col, 0, -1):
+                for col in range(0, start_col):
                     board[start_row][col] = '--'
                 board[start_row][start_col - 2] = 'bk'
                 board[start_row][start_col - 1] = 'br'
