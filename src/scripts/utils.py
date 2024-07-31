@@ -12,14 +12,14 @@ def get_square_under_mouse():
 
 
 # Check for Legal Move
-def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights):
+def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights, bottom_color, top_color):
     start_row, start_col = start_pos
     end_row, end_col = end_pos
     move_piece = piece[1]
     piece_color = piece[0]
 
     if move_piece == 'p':   # Pawn Logic
-        if piece_color == 'w':  # White Pawn
+        if piece_color == bottom_color:  # Bottom Color Pawn
             # Initial Two-Step Move
             if start_row == 6 and end_row == 4 and start_col == end_col and board[5][start_col] == '--' and board[4][start_col] == '--':
                 return True
@@ -29,13 +29,13 @@ def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights):
             # Capture Move
             if end_row == start_row - 1 and abs(end_col - start_col) == 1:
                 # Regular Capture
-                if board[end_row][end_col] != '--' and board[end_row][end_col][0] == 'b':
+                if board[end_row][end_col] != '--' and board[end_row][end_col][0] == top_color:
                     return True
                 # En Passant Capture
-                if last_move and last_move[0][0] == 1 and last_move[1][0] == 3 and last_move[1][1] == end_col and board[end_row + 1][end_col] == 'bp':
+                if last_move and last_move[0][0] == 1 and last_move[1][0] == 3 and last_move[1][1] == end_col and board[end_row + 1][end_col] == top_color + 'p':
                     return True
 
-        else:  # Black Pawn
+        else:  # Top Color Pawn
             # Initial Two-Step Move
             if start_row == 1 and end_row == 3 and start_col == end_col and board[2][start_col] == '--' and board[3][start_col] == '--':
                 return True
@@ -45,10 +45,10 @@ def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights):
             # Capture Move
             if end_row == start_row + 1 and abs(end_col - start_col) == 1:
                 # Regular Capture
-                if board[end_row][end_col] != '--' and board[end_row][end_col][0] == 'w':
+                if board[end_row][end_col] != '--' and board[end_row][end_col][0] == bottom_color:
                     return True
                 # En Passant Capture
-                if last_move and last_move[0][0] == 6 and last_move[1][0] == 4 and last_move[1][1] == end_col and board[end_row - 1][end_col] == 'wp':
+                if last_move and last_move[0][0] == 6 and last_move[1][0] == 4 and last_move[1][1] == end_col and board[end_row - 1][end_col] == bottom_color + 'p':
                     return True
 
     if move_piece == 'r':  # Rook Logic
@@ -142,7 +142,7 @@ def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
     end_row, end_col = end_pos
     # Normal King Move
     if abs(start_row - end_row) <= 1 and abs(start_col - end_col) <= 1:
-        if start_row != end_row and start_col != end_col:
+        if not (start_row != end_row and start_col != end_col):
             if piece[0] == 'w':  # White King
                 if board[end_row][end_col][0] != 'w':
                     return True
@@ -153,14 +153,14 @@ def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
     # Castling King Move
     if piece[0] == 'w':
         # King-side
-        if start_row == end_row and end_col >= start_col + 2 and board[7][7] == 'wr' and castling_rights['white_king_side'] == True:
+        if start_row == end_row and end_col >= start_col + 2 and board[7][7] == 'wr' and castling_rights['white_king_side']:
             for col in range(5, 6):
                 if board[start_row][col] != '--':
                     return False
                 else:
                     return True
         # White Queen-side
-        if start_row == end_row and end_col <= start_col - 2 and board[7][0] == 'wr' and castling_rights['white_queen_side'] == True:
+        if start_row == end_row and end_col <= start_col - 2 and board[7][0] == 'wr' and castling_rights['white_queen_side']:
             for col in range(1, 3):
                 if board[start_row][col] != '--':
                     return False
@@ -168,14 +168,14 @@ def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
                     return True
     else:
         # Black King-side
-        if start_row == end_row and end_col >= start_col + 2 and board[7][7] == 'br' and castling_rights['black_king_side'] == True:
+        if start_row == end_row and end_col >= start_col + 2 and board[7][7] == 'br' and castling_rights['black_king_side']:
             for col in range(5, 6):
                 if board[start_row][col] != '--':
                     return False
                 else:
                     return True
         # Black Queen-side
-        if start_row == end_row and end_col <= start_col - 2 and board[7][0] == 'br' and castling_rights['black_queen_side'] == True:
+        if start_row == end_row and end_col <= start_col - 2 and board[7][0] == 'br' and castling_rights['black_queen_side']:
             for col in range(1, 3):
                 if board[start_row][col] != '--':
                     return False
@@ -184,7 +184,7 @@ def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
 
 
 # Find all valid moves
-def get_all_valid_moves(turn, board, last_move, castling_rights):
+def get_all_valid_moves(turn, board, last_move, castling_rights, bottom_color, top_color):
     moves = []
     pieces = []
     for row in range(8):
@@ -194,7 +194,7 @@ def get_all_valid_moves(turn, board, last_move, castling_rights):
     piece = random.choice(pieces)
     for r in range(8):
         for c in range(8):
-            if is_valid_move(piece[0], (piece[1][0], piece[1][1]), (r, c), board, last_move, castling_rights):
+            if is_valid_move(piece[0], (piece[1][0], piece[1][1]), (r, c), board, last_move, castling_rights, bottom_color, top_color):
                 moves.append(((piece[1][0], piece[1][1]), (r, c)))
     return moves
 
@@ -203,6 +203,7 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
     start_row, start_col = start_pos
     end_row, end_col = end_pos
     piece = selected_piece
+    castling = False
 
     # En Passant Handling
     if piece[1] == 'p' and abs(start_row - end_row) == 1 and abs(start_col - end_col) == 1 and board[end_row][end_col] == '--':
@@ -211,21 +212,57 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
         else:
             board[end_row - 1][end_col] = '--'
 
-    board[end_row][end_col] = piece
+    # Castle Handling
+    if piece[1] == 'k' and abs(start_col - end_col) >= 2 and start_row == end_row:
+        castling = True
+        # White Castle
+        if piece[0] == 'w':
+            # Queen Side
+            if start_col - end_col < 0:
+                for col in range(start_col, 8):
+                    board[start_row][col] = '--'
+                board[start_row][start_col + 2] = 'wk'
+                board[start_row][start_col + 1] = 'wr'
+
+            # King Side
+            else:
+                for col in range(0, start_col):
+                    board[start_row][col] = '--'
+                board[start_row][start_col - 2] = 'wk'
+                board[start_row][start_col - 1] = 'wr'
+
+        # Black Castle
+        else:
+            # Queen Side
+            if start_col - end_col < 0:
+                for col in range(start_col, 7):
+                    board[start_row][col] = '--'
+                board[start_row][start_col + 2] = 'bk'
+                board[start_row][start_col + 1] = 'br'
+
+            # King Side
+            else:
+                for col in range(start_col, 0, -1):
+                    board[start_row][col] = '--'
+                board[start_row][start_col - 2] = 'bk'
+                board[start_row][start_col - 1] = 'br'
+
+    if not castling:
+        board[end_row][end_col] = piece
     board[start_row][start_col] = '--'
     last_move = (start_pos, end_pos)
 
-    update_castling_rights(castling_rights, (start_pos, end_pos), board, piece)
+    update_castling_rights(castling_rights, (start_pos, end_pos), piece)
 
     return board, last_move, (start_pos, end_pos)
 
 
 # NPC Decision Process
-def make_random_move(turn, board, last_move, castling_rights):
+def make_random_move(turn, board, last_move, castling_rights, bottom_color, top_color):
     valid_moves_available = False
     valid_moves = None
     while not valid_moves_available:
-        valid_moves = get_all_valid_moves(turn, board, last_move, castling_rights)
+        valid_moves = get_all_valid_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
         if valid_moves:
             valid_moves_available = True
     move = random.choice(valid_moves)
@@ -238,37 +275,8 @@ def make_random_move(turn, board, last_move, castling_rights):
     return board, last_move, move
 
 
-# Check for Winner
-def check_winner(board):
-    white_king = False
-    black_king = False
-    for row in board:
-        for piece in row:
-            if piece == 'wk':
-                white_king = True
-            if piece == 'bk':
-                black_king = True
-    if not white_king:
-        return "Black"
-    if not black_king:
-        return "White"
-    return None
-
-
-# Swap Colors
-def swap_board_colors(board):
-    for r in range(8):
-        for c in range(8):
-            if board[r][c] != '--':
-                piece = board[r][c]
-                if piece[0] == 'w':
-                    board[r][c] = 'b' + piece[1]
-                else:
-                    board[r][c] = 'w' + piece[1]
-
-
 # Update Castling Rights
-def update_castling_rights(castling_rights, move, board, selected_piece):
+def update_castling_rights(castling_rights, move, selected_piece):
     start_pos, end_pos = move
     piece = selected_piece
 
