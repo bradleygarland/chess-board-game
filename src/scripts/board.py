@@ -1,5 +1,6 @@
 # Import Libraries
 import pygame
+from gui import load_images
 
 # Initialize Pygame Font
 pygame.font.init()
@@ -36,24 +37,12 @@ def draw_board(win):
 
 # Draw Pieces Function
 def draw_pieces(win, board):
+    images = load_images()
     for row in range(8):
         for col in range(8):
             piece = board[row][col]
             if piece != '--':
-                piece_color = WHITE if piece[0] == 'w' else BLACK
-                piece_letter = piece[1]
-
-                # Draw the Border
-                text_surface_border = border_font.render(piece_letter, True, BLACK)
-                text_rect_border = text_surface_border.get_rect(
-                    center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
-                win.blit(text_surface_border, text_rect_border)
-
-                # Draw the Piece Letter
-                text_surface = font.render(piece_letter, True, piece_color)
-                text_rect = text_surface.get_rect(
-                    center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
-                win.blit(text_surface, text_rect)
+                win.blit(images[piece], ((col * SQUARE_SIZE) + 10, (row * SQUARE_SIZE) + 10))
 
 
 # Create Initial Board
