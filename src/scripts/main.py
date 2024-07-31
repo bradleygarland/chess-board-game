@@ -78,6 +78,7 @@ def main():
             winner = game_state.check_winner()
             if winner:
                 print(f'{winner} wins!')
+                run = False
                 break
         draw_board(window)
         draw_pieces(window, game_state.board)
