@@ -144,15 +144,17 @@ def is_valid_move(piece, move, board, last_move, castling_rights, bottom_color, 
 def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
     start_row, start_col = start_pos
     end_row, end_col = end_pos
+    # Prevent Self Capture
+    if start_row == end_row and start_col == end_col:
+        return False
     # Normal King Move
     if abs(start_row - end_row) <= 1 and abs(start_col - end_col) <= 1:
-        if not (start_row != end_row and start_col != end_col):
-            if piece[0] == 'w':  # White King
-                if board[end_row][end_col][0] != 'w':
-                    return True
-            else:  # Black King
-                if board[end_row][end_col][0] != 'b':
-                    return True
+        if piece[0] == 'w':  # White King
+            if board[end_row][end_col][0] != 'w':
+                return True
+        else:  # Black King
+            if board[end_row][end_col][0] != 'b':
+                return True
 
     # Castling King Move
     if piece[0] == 'w':
@@ -204,20 +206,30 @@ def get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_col
 
 
 
-def simulate_move(piece, move, board, last_move, simulate_type, turn, castling_rights, bottom_color, top_color, king_pos):
+def simulate_move(piece, move, board, last_move, simulate_type, turn, castling_rights, bottom_color, top_color):
     temp_board = copy.deepcopy(board)
     temp_board[move[1][0]][move[1][1]] = piece
     temp_board[move[0][0]][move[0][1]] = '--'
     opposing_turn = 'w' if turn == 'b' else 'b'
     if simulate_type == 'check':
         moves = get_all_moves(opposing_turn, temp_board, last_move, castling_rights, bottom_color, top_color)
-        for pos in king_pos:
+        for pos in find_king_pos(temp_board):
             if temp_board[pos[0]][pos[1]][0] == turn:
                 for potential_move in moves:
                     if pos == potential_move[1]:
                         return True
         return False
 
+
+def find_king_pos(board):
+    king_pos = [(0, 0), (0, 0)]
+    for row in range(8):
+        for col in range(8):
+            if board[row][col] == 'wk':
+                king_pos[0] = (row, col)
+            elif board[row][col] == 'bk':
+                king_pos[1] = (row, col)
+    return king_pos
 
 def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
     start_row, start_col = start_pos
