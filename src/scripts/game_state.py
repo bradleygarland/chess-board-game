@@ -12,6 +12,7 @@ class GameState:
         self.move_history = []
         self.swap_colors = False
         self.last_move = None
+        self.king_pos = []
         self.castling_rights = {
             'white_king_side': True,
             'white_queen_side': True,
@@ -79,5 +80,17 @@ class GameState:
         if not black_king:
             return 'White'
 
+    def find_king_pos(self):
+        king_pos = []
+        for row in range(8):
+            for col in range(8):
+                if self.board[row][col][1] == 'k':
+                    king_pos.append((row, col))
+        self.king_pos = king_pos
+
+
     def swap_turn(self):
         self.turn = 'b' if self.turn == 'w' else 'w'
+
+    def update(self):
+        self.find_king_pos()

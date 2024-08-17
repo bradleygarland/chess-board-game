@@ -1,7 +1,7 @@
 # Import Libraries and Functions
 import pygame
 import sys
-from utils import get_square_under_mouse, is_valid_move, make_random_move, make_move
+from utils import get_square_under_mouse, is_valid_move, make_random_move, make_move, simulate_move
 from gui import display_move_history
 from board import draw_board, draw_pieces
 from buttons import Button, handle_button_clicks
@@ -49,12 +49,13 @@ def main():
                 if game_state.selected_piece:
                     if pygame.mouse.get_pos()[0] <= WIDTH:
                         row, col = get_square_under_mouse()
-                    if game_state.selected_piece[0] == game_state.turn and game_state.selected_piece[0] == game_state.bottom_color and is_valid_move(game_state.selected_piece, game_state.selected_pos, (row, col), game_state.board, game_state.last_move, game_state.castling_rights, game_state.bottom_color, game_state.top_color):
+                    if game_state.selected_piece[0] == game_state.turn and game_state.selected_piece[0] == game_state.bottom_color and is_valid_move(game_state.selected_piece, (game_state.selected_pos, (row, col)), game_state.board, game_state.last_move, game_state.castling_rights, game_state.bottom_color, game_state.top_color) and not simulate_move(game_state.selected_piece, (game_state.selected_pos, (row, col)), game_state.board, game_state.last_move, 'check', game_state.turn, game_state.castling_rights, game_state.bottom_color, game_state.top_color, game_state.king_pos):
                         game_state.board, game_state.last_move, move = make_move(game_state.selected_pos, (row, col), game_state.selected_piece,  game_state.board, game_state.castling_rights)
                         game_state.move_history.append(move)
                         game_state.selected_piece = None
                         game_state.selected_pos = None
                         game_state.swap_turn()
+                        game_state.update()
                         winner = game_state.check_winner()
                         if winner:
                             print(f'{winner} wins!')
@@ -75,10 +76,10 @@ def main():
         if game_state.turn == game_state.top_color:
             game_state.board, game_state.last_move, move = make_random_move(game_state.turn, game_state.board, game_state.last_move, game_state.castling_rights, game_state.bottom_color, game_state.top_color)
             game_state.swap_turn()
+            game_state.update()
             winner = game_state.check_winner()
             if winner:
                 print(f'{winner} wins!')
-                run = False
                 break
         draw_board(window)
         draw_pieces(window, game_state.board)
