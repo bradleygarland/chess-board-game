@@ -204,8 +204,6 @@ def get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_col
                     moves.append(move)
     return moves
 
-
-
 def simulate_move(piece, move, board, last_move, simulate_type, turn, castling_rights, bottom_color, top_color):
     temp_board = copy.deepcopy(board)
     temp_board[move[1][0]][move[1][1]] = piece
@@ -291,13 +289,14 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
 
 # NPC Decision Process
 def make_random_move(turn, board, last_move, castling_rights, bottom_color, top_color):
-    valid_moves_available = False
-    valid_moves = None
-    while not valid_moves_available:
-        valid_moves = get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
-        if valid_moves:
-            valid_moves_available = True
-    move = random.choice(valid_moves)
+    moves = get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
+
+    for i in range(len(moves) - 1, -1, -1):
+        piece = board[moves[i][0][0]][moves[i][0][1]]
+        if simulate_move(piece, moves[i], board, last_move, 'check', turn, castling_rights, bottom_color, top_color):
+            moves.remove(moves[i])
+    if len(moves) > 0:
+        move = random.choice(moves)
     start_pos, end_pos = move
     piece = board[start_pos[0]][start_pos[1]]
     board[end_pos[0]][end_pos[1]] = piece

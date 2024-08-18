@@ -44,6 +44,7 @@ def main():
             else:
                 handle_button_clicks(buttons, event)
 
+            # Player Turn
             if game_state.turn == game_state.bottom_color and event.type == pygame.MOUSEBUTTONDOWN:
                 row, col = None, None
                 if game_state.selected_piece:
@@ -72,13 +73,17 @@ def main():
                             game_state.selected_piece = game_state.board[row][col]
                             game_state.selected_pos = (row, col)
                             game_state.board[row][col] = '--'
+
+        # NPC Turn
         if game_state.turn == game_state.top_color:
             game_state.board, game_state.last_move, move = make_random_move(game_state.turn, game_state.board, game_state.last_move, game_state.castling_rights, game_state.bottom_color, game_state.top_color)
+            game_state.move_history.append(move)
             game_state.swap_turn()
             winner = game_state.check_winner()
             if winner:
                 print(f'{winner} wins!')
                 break
+
         draw_board(window)
         draw_pieces(window, game_state.board)
         display_move_history(window, game_state.move_history)
