@@ -12,6 +12,7 @@ class GameState:
         self.move_history = []
         self.swap_colors = False
         self.last_move = None
+        self.king_pos = []
         self.castling_rights = {
             'white_king_side': True,
             'white_queen_side': True,
@@ -68,16 +69,27 @@ class GameState:
     def check_winner(self):
         white_king = False
         black_king = False
+        winner = None
         for row in self.board:
             for piece in row:
                 if piece == 'wk':
                     white_king = True
                 elif piece == 'bk':
                     black_king = True
-        if not white_king:
-            return 'Black'
-        if not black_king:
-            return 'White'
+        if black_king and not white_king:
+            winner = 'Black'
+        if white_king and not black_king:
+            winner = 'White'
+
+        if winner:
+            print(winner + ' wins!')
+            return True
+        return False
 
     def swap_turn(self):
         self.turn = 'b' if self.turn == 'w' else 'w'
+
+    def check_conditions(self):
+        self.check_winner()
+
+

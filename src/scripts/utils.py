@@ -1,5 +1,6 @@
 import pygame
 import random
+import copy
 
 # Constants
 SQUARE_SIZE = 100
@@ -12,7 +13,10 @@ def get_square_under_mouse():
 
 
 # Check for Legal Move
-def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights, bottom_color, top_color):
+def is_valid_move(piece, move, board, last_move, castling_rights, bottom_color, top_color):
+    start_pos = move[0]
+    end_pos = move[1]
+
     start_row, start_col = start_pos
     end_row, end_col = end_pos
     move_piece = piece[1]
@@ -140,15 +144,17 @@ def is_valid_move(piece, start_pos, end_pos, board, last_move, castling_rights, 
 def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
     start_row, start_col = start_pos
     end_row, end_col = end_pos
+    # Prevent Self Capture
+    if start_row == end_row and start_col == end_col:
+        return False
     # Normal King Move
     if abs(start_row - end_row) <= 1 and abs(start_col - end_col) <= 1:
-        if not (start_row != end_row and start_col != end_col):
-            if piece[0] == 'w':  # White King
-                if board[end_row][end_col][0] != 'w':
-                    return True
-            else:  # Black King
-                if board[end_row][end_col][0] != 'b':
-                    return True
+        if piece[0] == 'w':  # White King
+            if board[end_row][end_col][0] != 'w':
+                return True
+        else:  # Black King
+            if board[end_row][end_col][0] != 'b':
+                return True
 
     # Castling King Move
     if piece[0] == 'w':
@@ -183,20 +189,44 @@ def valid_king_move(board, start_pos, end_pos, piece, castling_rights):
                     return True
 
 
-# Find all valid moves
-def get_all_valid_moves(turn, board, last_move, castling_rights, bottom_color, top_color):
-    moves = []
+def get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_color):
     pieces = []
+    moves = []
     for row in range(8):
         for col in range(8):
-            if board[row][col][0] == turn:
-                pieces.append([board[row][col], [row, col]])
-    piece = random.choice(pieces)
-    for r in range(8):
-        for c in range(8):
-            if is_valid_move(piece[0], (piece[1][0], piece[1][1]), (r, c), board, last_move, castling_rights, bottom_color, top_color):
-                moves.append(((piece[1][0], piece[1][1]), (r, c)))
+            if board[row][col] != '--' and board[row][col][0] == turn:
+                pieces.append([board[row][col], (row, col)]) # ['piece', [row, col]]
+    for piece in pieces:
+        for row in range(8):
+            for col in range(8):
+                move = [piece[1], (row, col)] # [(start_pos), (end_pos)]
+                if is_valid_move(piece[0], move, board, last_move, castling_rights, bottom_color, top_color):
+                    moves.append(move)
     return moves
+
+def simulate_move(piece, move, board, last_move, turn, castling_rights, bottom_color, top_color):
+    temp_board = copy.deepcopy(board)
+    temp_board[move[1][0]][move[1][1]] = piece
+    temp_board[move[0][0]][move[0][1]] = '--'
+    opposing_turn = 'w' if turn == 'b' else 'b'
+    moves = get_all_moves(opposing_turn, temp_board, last_move, castling_rights, bottom_color, top_color)
+    for pos in find_king_pos(temp_board):
+        if temp_board[pos[0]][pos[1]][0] == turn:
+            for potential_move in moves:
+                if pos == potential_move[1]:
+                    return True
+    return False
+
+
+def find_king_pos(board):
+    king_pos = [(0, 0), (0, 0)]
+    for row in range(8):
+        for col in range(8):
+            if board[row][col] == 'wk':
+                king_pos[0] = (row, col)
+            elif board[row][col] == 'bk':
+                king_pos[1] = (row, col)
+    return king_pos
 
 
 def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
@@ -257,25 +287,25 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
     return board, last_move, (start_pos, end_pos)
 
 
-# NPC Decision Process
 def make_random_move(turn, board, last_move, castling_rights, bottom_color, top_color):
-    valid_moves_available = False
-    valid_moves = None
-    while not valid_moves_available:
-        valid_moves = get_all_valid_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
-        if valid_moves:
-            valid_moves_available = True
-    move = random.choice(valid_moves)
-    start_pos, end_pos = move
-    piece = board[start_pos[0]][start_pos[1]]
-    board[end_pos[0]][end_pos[1]] = piece
-    board[start_pos[0]][start_pos[1]] = '--'
-    last_move = start_pos, end_pos
+    moves = get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
+    move = None
+
+    for i in range(len(moves) - 1, -1, -1):
+        piece = board[moves[i][0][0]][moves[i][0][1]]
+        if simulate_move(piece, moves[i], board, last_move, turn, castling_rights, bottom_color, top_color):
+            moves.remove(moves[i])
+    if len(moves) > 0:
+        move = random.choice(moves)
+        start_pos, end_pos = move
+        piece = board[start_pos[0]][start_pos[1]]
+        board[end_pos[0]][end_pos[1]] = piece
+        board[start_pos[0]][start_pos[1]] = '--'
+        last_move = start_pos, end_pos
 
     return board, last_move, move
 
 
-# Update Castling Rights
 def update_castling_rights(castling_rights, move, selected_piece):
     start_pos, end_pos = move
     piece = selected_piece
