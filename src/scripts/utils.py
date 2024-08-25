@@ -204,19 +204,18 @@ def get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_col
                     moves.append(move)
     return moves
 
-def simulate_move(piece, move, board, last_move, simulate_type, turn, castling_rights, bottom_color, top_color):
+def simulate_move(piece, move, board, last_move, turn, castling_rights, bottom_color, top_color):
     temp_board = copy.deepcopy(board)
     temp_board[move[1][0]][move[1][1]] = piece
     temp_board[move[0][0]][move[0][1]] = '--'
     opposing_turn = 'w' if turn == 'b' else 'b'
-    if simulate_type == 'check':
-        moves = get_all_moves(opposing_turn, temp_board, last_move, castling_rights, bottom_color, top_color)
-        for pos in find_king_pos(temp_board):
-            if temp_board[pos[0]][pos[1]][0] == turn:
-                for potential_move in moves:
-                    if pos == potential_move[1]:
-                        return True
-        return False
+    moves = get_all_moves(opposing_turn, temp_board, last_move, castling_rights, bottom_color, top_color)
+    for pos in find_king_pos(temp_board):
+        if temp_board[pos[0]][pos[1]][0] == turn:
+            for potential_move in moves:
+                if pos == potential_move[1]:
+                    return True
+    return False
 
 
 def find_king_pos(board):
@@ -228,6 +227,7 @@ def find_king_pos(board):
             elif board[row][col] == 'bk':
                 king_pos[1] = (row, col)
     return king_pos
+
 
 def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
     start_row, start_col = start_pos
@@ -287,26 +287,25 @@ def make_move(start_pos, end_pos, selected_piece, board, castling_rights):
     return board, last_move, (start_pos, end_pos)
 
 
-# NPC Decision Process
 def make_random_move(turn, board, last_move, castling_rights, bottom_color, top_color):
     moves = get_all_moves(turn, board, last_move, castling_rights, bottom_color, top_color)
+    move = None
 
     for i in range(len(moves) - 1, -1, -1):
         piece = board[moves[i][0][0]][moves[i][0][1]]
-        if simulate_move(piece, moves[i], board, last_move, 'check', turn, castling_rights, bottom_color, top_color):
+        if simulate_move(piece, moves[i], board, last_move, turn, castling_rights, bottom_color, top_color):
             moves.remove(moves[i])
     if len(moves) > 0:
         move = random.choice(moves)
-    start_pos, end_pos = move
-    piece = board[start_pos[0]][start_pos[1]]
-    board[end_pos[0]][end_pos[1]] = piece
-    board[start_pos[0]][start_pos[1]] = '--'
-    last_move = start_pos, end_pos
+        start_pos, end_pos = move
+        piece = board[start_pos[0]][start_pos[1]]
+        board[end_pos[0]][end_pos[1]] = piece
+        board[start_pos[0]][start_pos[1]] = '--'
+        last_move = start_pos, end_pos
 
     return board, last_move, move
 
 
-# Update Castling Rights
 def update_castling_rights(castling_rights, move, selected_piece):
     start_pos, end_pos = move
     piece = selected_piece

@@ -69,28 +69,27 @@ class GameState:
     def check_winner(self):
         white_king = False
         black_king = False
+        winner = None
         for row in self.board:
             for piece in row:
                 if piece == 'wk':
                     white_king = True
                 elif piece == 'bk':
                     black_king = True
-        if not white_king:
-            return 'Black'
-        if not black_king:
-            return 'White'
+        if black_king and not white_king:
+            winner = 'Black'
+        if white_king and not black_king:
+            winner = 'White'
 
-    def find_king_pos(self):
-        king_pos = []
-        for row in range(8):
-            for col in range(8):
-                if self.board[row][col][1] == 'k':
-                    king_pos.append((row, col))
-        self.king_pos = king_pos
-
+        if winner:
+            print(winner + ' wins!')
+            return True
+        return False
 
     def swap_turn(self):
         self.turn = 'b' if self.turn == 'w' else 'w'
 
-    def update(self):
-        self.find_king_pos()
+    def check_conditions(self):
+        self.check_winner()
+
+
